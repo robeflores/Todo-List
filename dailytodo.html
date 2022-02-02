@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Daily ToDo</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/css/bootstrap.min.css">
+    <link rel="stylesheet" href="dailytodo.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script> 
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/js/bootstrap.min.js"></script>
+</head>
+
+<body>
+    
+    <script>
+        "use strict";
+        
+        
+        /**
+        * Class to represent a node in the task linked list. Each node will have its corresponding 'task' string data
+        *   as well as boolean to determine if the user wants to repeat the task or not. Each task node also has a reference
+        *   to the next node in the linked list.
+        */
+        class TaskNode { 
+            /**
+            * Constructor for a task node.
+            * @param task: task data of type string. This is what the user types for each task.
+            * @param repeat: boolean which determines whether the task is to be repeated or not
+            * @return: the element of this MyString object at position i
+            */ 
+            constructor(task, repeat) 
+            { 
+                this.task = task;
+                this.taskRepeating = repeat;
+                this.next = null
+            }
+        }
+        
+        /**
+        * Class to represent a linked list of 'TaskNode' objects. Each linked list has a reference to the head 'TaskNode'
+        *   as well as various functions needed to perform various processing on each and every node of class 'TaskNode'
+        *   which are conveniently linked together via references that each node has to the next node in the list..
+        */
+        class TaskLinkedList {
+            /**
+            * Constructor for a task linked list. Establishes a head variable which points to the first 'TaskNode' in our
+            *   chain and a size variable, which is used to keep track of how many nodes are chained in the linked list.
+            */ 
+            constructor() 
+            { 
+                this.head = null; 
+                this.size = 0; 
+            }
+            
+            /**
+            * this function links a new 'TaskNode' to the node found at the end of our linked list, whether it is the head node
+            *   or the tail node.
+            * @param task: data of type string that will be assigned to the new node linked at the end of our linked list.
+            * @param repeat: data of type boolean which determines whether the new node is to be repeated or not.
+            */ 
+            add(task, repeat) 
+            { 
+                // creates a new node to be added to our linked list
+                let node = new TaskNode(task, repeat); 
+
+                // 'iterNode' is used to iterate through our linked list 
+                let iterNode; 
+
+                // if our linked list is empty, it has no head and 'node' is linked as the head node.
+                if (this.head == null) 
+                    this.head = node;
+                // else if our linked list does have a head node, we set 'iterNode' to the head node to begin iterating
+                //  through each node in the linked list.
+                else { 
+                    iterNode = this.head; 
+
+                    // we iterate through the linked list while 'iterNode' has a link to a successive node via its 'next' member variable
+                    //  this while loop ends when we have reached the end of the linked list
+                    while (iterNode.next) { 
+                        iterNode = iterNode.next; 
+                    } 
+
+                    // since 'iterNode' is now the tail node, we link the new 'node' as the new tail node.
+                    iterNode.next = node; 
+                }
+    
+                this.size++; // we increment the size of the linked list after adding a new node to the end
+                
+                return node; // we return the new node
+            }
+            
+            
+            
+            /**
+            * this function links a new 'TaskNode' to the node found at the specified 'index' in our linked list.
+            * @param task: data of type string that will be assigned to the new node linked to our linked list.
+            * @param repeat: data of type boolean which determines whether the new node is to be repeated or not.
+            * @param index: data of type int which determines where the new node will be linked at in the list.
+            */ 
+            addAt(task, repeat, index) 
+            { 
+                // creates a new node to be added to our linked list
+                var node = new TaskNode(task, repeat);
+                
+                // 'iterNode' is used to iterate through our linked list 
+                let iterNode = this.head; 
+
+                // if our desired index to add the new node at in the linked list is 0, 
+                // then we add the the new 'node' at the head of our linked list, making sure
+                //  to not lose our current head node by first linking our new 'node' to it.
+                if (index == 0) { 
+                    node.next = this.head; //links the new node to the head, prevents the head from being lost
+                    this.head = node; // assigns the linked list's head variable to our new node.
+                }
+                // else if our desired index is greater than the size of the linked list, than we add the new
+                //  'node' to the tail of our linked list.
+                else if (index >= this.size){
+                    iterNode = this.getNodeAt(this.size-1); // gets the tail node of our linked list
+                    iterNode.next = node; // links our new node the current tail node 'iterNode'
+                }
+                // else our new 'node' is linked in our desired index, making sure to not lose any nodes already in the list
+                //  by linking everything proberply
+                else { 
+                    iterNode = this.head; // start from the head to iterate until we have found the index 
+                    let prevNode = null; // keeps track of the node that links to the current 'iterNode'
+                    let i = 0; // keeps track of the index of 'iterNode' as we iterate through our linked list.
+
+                    // iterates over the linked list until we have reached the desired index to place our new 'node' at
+                    while (i < index) { 
+                        i++; // increases index of our iteration
+                        prevNode = iterNode; 
+                        iterNode = iterNode.next; 
+                    } 
+
+                    
+                    node.next = iterNode; //links the new node before the 'iterNode'
+                    prevNode.next = node; // links the 'prevNode' before the 'iterNode'
+                } 
+                this.size++; // our linked list is now one node larger
+
+            }
+            
+            
+            /**
+            * this function removes a 'TaskNode' found at the specified 'index' from our linked list.
+            * @param index: data of type int which determines where to delete from in the linked list.
+            */  
+            removeFrom(index) 
+            { 
+                // if our desired index to delete from is greater than the size of our linked list, or if it is negative
+                //  we return -1 as we cannot do that.
+                if (index < 0 || index > this.size) 
+                    return -1;
+                //else we can delete
+                else { 
+                    let iterNode;
+                    let prevNode;
+                    let i = 0;
+                    
+                    iterNode = this.head; 
+                    prevNode = iterNode; 
+
+                    // if deleting the head node
+                    if (index == 0) { 
+                        this.head = iterNode.next; 
+                    }
+                    // else we iterate over the list to the 
+                    //  position 'index' to remove the node
+                    else { 
+                        while (i < index) { 
+                            i++; 
+                            prevNode = iterNode; 
+                            iterNode = iterNode.next; 
+                        } 
+
+                        // remove the node by unlinking the previous node from it
+                        prevNode.next = iterNode.next; 
+                    } 
+                    this.size--; // the linked list has gotten one node smaller
+
+                    // return the removed node's corresponding task data
+                    return iterNode.task; 
+                } 
+            }
+            
+            /**
+            * this function returns the node found at the desired index in our linked list
+            * @param index: data of type int which determines which node at 'index' in the linked list we want to return.
+            */  
+            getNodeAt(index) 
+            { 
+                // if our index is not valid for the linked list, we return null. essentially an error occurred.
+                if (index < 0 || index > this.size) 
+                    return null;
+                // else we return the node found at the desired index
+                else { 
+                    let iterNode
+                    let i = 0; 
+                    iterNode = this.head; 
+
+                    // iterates through linked list via 'iterNode' until the desired index has been reached
+                    while (i < index) {  
+                        iterNode = iterNode.next;
+                        i++;
+                    } 
+
+                    // iterNode now points to the node in our linked list at the desired index, we return it
+                    return iterNode; 
+                } 
+            } 
+            
+            /**
+            * this function removes the argument node from the linked list
+            * @param taskNode: node of type 'TaskNode' that is to be removed
+            */ 
+            removeTask(taskNode) 
+            { 
+                console.log("removing...");
+                let iterNode = this.head; 
+                let prevNode = null; 
+
+                // iterate over the linked list 
+                while (iterNode != null) { 
+                    // if iterNode is equal to the node we want to delete
+                    if (iterNode == taskNode) {
+                        if (prevNode == null) { // if prevNode is null, we remove the iterNode by undoing the link
+                            this.head = iterNode.next; 
+                        }
+                        else { // else we unlink prevNode from iterNode
+                            prevNode.next = iterNode.next; 
+                        } 
+                        this.size--; // our linked list has gotten one node smaller
+                        console.log("removed: " + iterNode.task);
+                        
+                    }
+                    // iterates through list
+                    prevNode = iterNode; 
+                    iterNode = iterNode.next; 
+                }
+            }
+            
+            //HELPER METHODS
+            
+            
+            
+            /**
+            * function to check whether the linked list is empty
+            */ 
+            isEmpty() 
+            { 
+                return this.size == 0; 
+            } 
+            
+            /**
+            * function to print to console the linked list
+            */  
+            printList() 
+            { 
+                var iterNode = this.head; 
+                var str = "";
+                // iterates through linked list, orinting each task node's data out
+                while (iterNode) { 
+                    str += iterNode.task + " "; 
+                    iterNode = iterNode.next; 
+                } 
+                console.log("List: " + str); 
+            } 
+        } 
+        
+        
+        // 0= today, 1 = tomorrow. used to keep track of which list the user is actively using
+        let activeList = 0;
+        
+        // used to keep track of each linked list, for today's tasks and tomorrow's tasks
+        let taskListsArray = [2];
+        
+        // creates a new linked list to keep track of today's tasks.
+        let linkedTaskListToday = new TaskLinkedList();
+        
+        // creates a new linked list to keep track of tomorrow's tasks.
+        let linkedTaskListTomorrow = new TaskLinkedList();
+        
+        // assigns the linked lists to the array which is used to keep track and reference of both
+        taskListsArray[0] = linkedTaskListToday;
+        taskListsArray[1] = linkedTaskListTomorrow;
+        
+        // this function runs only after the webpage is ready for DOM manipulation
+        $(document).ready(function(){
+            
+            // gives the button used to add new tasks the function to add a new task
+            $("#addButton").click(function(){
+                addNewTask();
+            });
+            
+            // gives the input field used by the user to input a new task's the function to add a new task if the 'enter' key is pressed
+            $("#taskInput").keyup(function(event){
+                // Number 13 is the "Enter" key on the keyboard
+                if (event.keyCode == 13) {
+                    $("#addButton").click();
+                }
+            });
+            
+            // assigned to the button used by the user to activate and display today's tasks 
+            $("#todayButton").click(function(){
+                activateTaskList(0);
+             });
+    
+            // assigned to the button used by the user to activate and display tomorrow's tasks 
+            $("#tomorrowButton").click(function(){
+                activateTaskList(1);
+            });
+            
+
+            // .sortable allows the area where task table rows are placed to be sortable
+            let node = null;
+            $( "#taskArea" ).sortable({
+                // the sort starts when the user drags a row
+                start: function(event, ui) {
+                    let startIndex = ui.item.index(); // index at where the row the user is dragging started at in the table
+                    node = taskListsArray[activeList].getNodeAt(startIndex); // gets the corresponding data node at startIndex from the active linked list
+                    taskListsArray[activeList].removeFrom(startIndex); // removes the node from the active linked list at the 'startIndex'
+                    console.log('start: ' + startIndex);
+                    //taskListsArray[activeList].printList();
+                },
+                // the sort stops when the user stops dragging and lets go of the row
+                stop: function(event, ui) {
+                    let endIndex = ui.item.index(); // index at where the row ends up in the table after dragging is stopped
+                    taskListsArray[activeList].addAt(node.task, node.taskRepeating, endIndex); // adds the previously removed task node to the
+                    //  active linked list at the 'endIndex'
+                    console.log('update: ' + endIndex);
+                    taskListsArray[activeList].printList();
+                    
+                    activateTaskList(activeList); // activates and refreshes the active linked list
+                }
+            });
+            $( "#taskArea" ).disableSelection();
+            
+            
+            loadTasksFromLocalStorage(); //loads the task data from local storage
+            checkIfDayHasPassed(); // if day has passed, tomorrows tasks are placed in today's tasks
+            saveDateToLocalStorage(); // saves the current date to local storage, for reference
+            activateTaskList(0); // activates the today linked list for display
+            KeepFoot(); // keeps the footer at the bottom
+        });
+        
+        /**
+        * this function adds a new task to both the linked list and to the table for display to the user
+        */ 
+        function addNewTask(){
+            let taskNode = taskListsArray[activeList].add($("#taskInput").val(), false); // adds a new 'TaskNode' with the data retreived from the user 
+            //  input field
+            let task = new Task($("#taskInput").val(), taskNode); // creates a new task row for the data table in the webpage
+            $("#taskInput").val(''); // clears the input field 
+            taskListsArray[activeList].printList();
+            saveTasksToLocalStorage(); // save the changes made to our linked lists
+            KeepFoot();
+        }
+        
+        /**
+        * this function adds a new task to the data table for display in the browser
+        * @param taskValue: string value equal to the task value
+        * @param taskNode: equal to task node
+        */ 
+        function addNewTaskFromNode(taskValue, taskNode){
+            let task = new Task(taskValue, taskNode); // creates a new table row in the browser, simply for graphical purposes
+            saveTasksToLocalStorage(); // saves the changes made to our linked lists
+            KeepFoot();
+        }
+        
+        /**
+        * this function keeps the footer at the end of the document at all times, called everytime the document is changed in someway
+        */ 
+        function KeepFoot() {
+            var docHeight = $(window).height(); // gets the document height
+            var footerHeight = $('#footer').height(); // gets the footer height
+            var footerTop = $('#footer').position().top + footerHeight; // gets the position of the top footer plus its height
+            
+            //if the footer position is less then document height
+            if (footerTop < docHeight) {
+                $('#footer').css('margin-top', (docHeight - footerTop) + 'px'); // place it at the bottom
+            }
+        }
+        
+        
+        /**
+        * this class is used to represent a row graphic in the data table and provide functionality for the 
+        *   various buttons and input fields
+        */ 
+        class Task{
+            /**
+            * constructor for a row graphic in our data table
+            * @param task: string value of task to be assigned to the row
+            * @param taskNode: node of class 'TaskNode'
+            */
+            constructor(task, taskNode){
+                var self = this;
+        
+                let row = document.createElement("tr"); // row to add to table
+                let t = task;
+                let node = taskNode;
+                
+                
+                let taskTD = document.createElement("td"); // table data element to add to row
+                row.appendChild(taskTD);
+                let taskChangeName = document.createElement("input"); // inpiut field to change task text to add to taskTD
+                taskChangeName.type = "text";
+                taskChangeName.style.display = 'none';
+                let taskText = document.createElement("p"); // p element to add to taskTD
+                
+                //if task is nothing but spaces
+                if(/^\s*$/.test(task))
+                    task = '___'; // task is set to a string of underscores
+                taskText.innerHTML = task;
+                taskTD.appendChild(taskText);
+                taskTD.appendChild(taskChangeName);
+                
+                // when the task text is clicked on
+                taskText.addEventListener("click", function(){
+                    setTimeout(function(){
+                        //text is hidden
+                        taskText.innerHTML = '';
+                        //edit field is displayed
+                        taskChangeName.style.display = 'block';
+                        taskChangeName.focus();
+                    }, 100);
+                });
+                
+                
+                //when input field to change task is active and enter key is pressed 
+                taskChangeName.addEventListener("keyup", function(event){
+                    if (event.keyCode == 13){
+                        //if the task input field is nothing but spaces 
+                        if(/^\s*$/.test(taskChangeName.value))
+                            node.task = '___'; // task is set to a string of underscores 
+                        else
+                            node.task = taskChangeName.value; //else we set the node's task to the input
+                        
+                        taskText.innerHTML = node.task; // replace the blank text with the new input text
+                        taskChangeName.value = '';
+                        taskChangeName.style.display = 'none'; // hide the ionput field
+                        saveTasksToLocalStorage(); // save our changes
+                    }
+                });
+                
+                //when the user clicks anywhere in the document
+                $(document).click(function(event) {
+                    // if the click was not the 'taskChangeName' input field
+                    if (taskChangeName.style.display == 'block' && !$(event.target).is(taskChangeName))
+                    {
+                        console.log(taskChangeName.innerHTML);
+                        
+                        //if both our input field and task data at node are only spaces
+                        if(/^\s*$/.test(node.task) && /^\s*$/.test(taskChangeName.value)){
+                            node.task = '___'; // replace the task with underscores
+                            saveTasksToLocalStorage();
+                        }
+                        // else if our input is not empty
+                        else if(taskChangeName.value.length != 0){
+                            node.task = taskChangeName.value; // replace the task value with the input field value
+                            saveTasksToLocalStorage();
+                        }
+                        
+                        //update the task text and hide the input field
+                        taskText.innerHTML = node.task;
+                        taskChangeName.value = '';
+                        taskChangeName.style.display = 'none';
+                    }
+                });
+                
+                
+                
+                // create the button to toggle on repeat
+                let repeatButton = document.createElement("button");
+                repeatButton.type = "button";
+                if (node.taskRepeating){ // if the boolean is set to true, color the button blue
+                    repeatButton.style="";
+                    repeatButton.className = "btn btn-primary repeatButton";
+                    repeatButton.textContent = "Yes";
+                }
+                else{ // else we color the button white
+                    repeatButton.className = "btn btn-primary dontRepeatButton";
+                    repeatButton.textContent = "No";
+                }
+                let repeatButtonTD = document.createElement("td");
+                repeatButtonTD.appendChild(repeatButton);
+                row.appendChild(repeatButtonTD); // add button to row
+                
+                //if repeat button is pressed, toggle repeat boolean for task node
+                repeatButton.addEventListener("click", function(){
+                    self.toggleRepeat(taskNode.taskRepeating, repeatButton, taskNode);
+                });
+                
+                
+                
+                // create the checkbox for each row
+                let checkBox = document.createElement("input");
+                checkBox.type = "checkbox";
+                let checkboxTD = document.createElement("td");
+                checkboxTD.appendChild(checkBox);
+                row.appendChild(checkboxTD);
+                
+                //if checkbox is clicked, delete the row node and row from table on screen
+                checkBox.addEventListener("click", function(){
+                    self.removeTask(row, node);
+                });
+                
+                $("#taskArea").append(row); // add the row to the data table graphic
+            }
+            
+            /**
+            * removes row from both data table graphic and linked list
+            * @param task: string value of task to be assigned to the row
+            * @param taskNode: node of class 'TaskNode'
+            */
+            removeTask(row, taskNode){
+                // if task is repeating, add it to the other linekd list
+                if (taskNode.taskRepeating){
+                        // today
+                    if (activeList == 0){
+                            taskListsArray[1].add(taskNode.task, taskNode.taskRepeating);
+                    }
+                    // tomorrow
+                    else if (activeList == 1){
+                            taskListsArray[0].add(taskNode.task, taskNode.taskRepeating);
+                    }
+                }
+                  
+                taskListsArray[activeList].removeTask(taskNode); // remove node from active linked list
+                taskListsArray[activeList].printList(); // print the list
+                row.remove(); // remove the row graphic from html
+                saveTasksToLocalStorage(); // save changes
+                KeepFoot(); // keep footer in position
+            }
+            
+            /**
+            * toggle repeat boolean for node
+            * @param tgl: boolean value of node's toggle
+            * @param button: repeat button to edit
+            * @param node: node to edit its boolean value
+            */
+            toggleRepeat(tgl, button, node){
+                let toggle = tgl;
+                let repeatButton = button;
+                let taskNode = node;
+                
+                toggle = !toggle;
+                    
+                if (toggle){ // color button blue with 'Yes' text
+                    repeatButton.style="";
+                    repeatButton.className = "btn btn-primary repeatButton";
+                    repeatButton.textContent = "Yes";
+                }
+                else{  // color button white with 'No' text
+                    repeatButton.className = "btn btn-primary dontRepeatButton";
+                    repeatButton.textContent = "No";
+                }
+                
+                taskNode.taskRepeating = toggle;
+                saveTasksToLocalStorage();
+            }
+        }
+        
+        /**
+        * toggle repeat boolean for node
+        * @param tgl: boolean value of node's toggle
+        * @param button: repeat button to edit
+        * @param node: node to edit its boolean value
+        */
+        function activateTaskList(listNumber){
+            // remove all rows graphically in the data table area 
+            $('#taskArea').children('tr').each(function () {
+                this.remove(); // "this" is the current element in the loop
+            });
+            
+            activeList = listNumber;
+            
+            // get todays date and assign it to a string oin format mm/dd/yyyy
+            var today = new Date();
+            var dd = String(today.getDate()).padStart(2, '0');
+            var mm = String(today.getMonth() + 1).padStart(2, '0'); //January is 0!
+            var yyyy = today.getFullYear();
+            today = mm + '/' + dd + '/' + yyyy;
+            
+            // get tomorrows date and assign it to a string oin format mm/dd/yyyy
+            var tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            var dd = String(tomorrow.getDate()).padStart(2, '0');
+            var mm = String(tomorrow.getMonth() + 1).padStart(2, '0'); //January is 0!
+            var yyyy = tomorrow.getFullYear();
+            tomorrow = mm + '/' + dd + '/' + yyyy;
+            
+            //set the title text inside of the webpage to the appropriate task table and date
+            if (listNumber == 0)
+                $("#taskListTitle").text("Today's Tasks (" + today + ")");
+            else
+                $("#taskListTitle").text("Tomorrow's Tasks (" + tomorrow + ")");
+            
+            populateTaskList();
+			KeepFoot();
+        }
+        /*
+        $(document).on('click', '#todayButton', function(){
+            activateTaskList(0);
+        });
+        
+        $(document).on('click', '#tomorrowButton', function(){
+            activateTaskList(1);
+        });
+        */
+        
+        /**
+        * function to draw each task node in active linked list as a row graphic in the data table
+        */
+        function populateTaskList(){
+            if(!taskListsArray[activeList].isEmpty()){
+                let iterNode = taskListsArray[activeList].head;
+                while (iterNode) { 
+                    addNewTaskFromNode(iterNode.task, iterNode)
+                    iterNode = iterNode.next; 
+                } 
+            }
+            
+        }
+        
+        /**
+        * function to save each task of each linked list to local storage using arrays
+        */
+        function saveTasksToLocalStorage(){
+            //save todays tasks to storage
+            let todayTasks = []; // array to store in storage
+            let iterNode = taskListsArray[0].head; // 'iterNode' used to add each node task data to the array
+                while (iterNode) { 
+                    todayTasks.push(iterNode.task);
+                    todayTasks.push(iterNode.taskRepeating);
+                    iterNode = iterNode.next; 
+                } 
+            localStorage.setItem('todayTaskArray', JSON.stringify(todayTasks)); // stringify array so we can store it properly
+            
+            //save tomorrow's tasks to storage
+            let tomorrowTasks = []; // array to store in storage
+            iterNode = taskListsArray[1].head; // 'iterNode' used to add each node task data to the array
+                while (iterNode) { 
+                    tomorrowTasks.push(iterNode.task);
+                    tomorrowTasks.push(iterNode.taskRepeating);
+                    iterNode = iterNode.next; 
+                } 
+            localStorage.setItem('tomorrowTaskArray', JSON.stringify(tomorrowTasks));
+        }
+        
+        /**
+        * function to load task arrays for today and tomorrow and converts each task to a 'TaskNode' node
+        */
+        function loadTasksFromLocalStorage(){
+            if(localStorage.getItem('todayTaskArray')){ // if the today's tasks array exists in storage
+                let loadedTodayTasks = [];
+                loadedTodayTasks = JSON.parse(localStorage.getItem('todayTaskArray')); // load tasks array from local storage
+                let size = loadedTodayTasks.length;
+                for(let i = 0; i < size; i=i+2)
+                    taskListsArray[0].add(loadedTodayTasks[i], loadedTodayTasks[i+1]); // add new task node using task at i and taskRepeating boolean at i + 1
+            }
+            
+            if(localStorage.getItem('tomorrowTaskArray')){ // if the tomorrows's tasks array exists in storage
+                let loadedTomorrowTasks = [];
+                loadedTomorrowTasks = JSON.parse(localStorage.getItem('tomorrowTaskArray'));
+                let size = loadedTomorrowTasks.length;
+                for(let i = 0; i < size; i=i+2)
+                    taskListsArray[1].add(loadedTomorrowTasks[i], loadedTomorrowTasks[i+1]);
+            }
+            
+            populateTaskList(); //draw the active task list
+        }
+        
+        /**
+        * function to save date to local storage, to be used on load to check if day has passed
+        */
+        function saveDateToLocalStorage(){
+            var tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            var dd = String(tomorrow.getDate()).padStart(2, '0');
+            var mm = String(tomorrow.getMonth() + 1).padStart(2, '0'); //January is 0!
+            var yyyy = tomorrow.getFullYear();
+            tomorrow = mm + '/' + dd + '/' + yyyy;
+            
+            localStorage.setItem('tomorrowDay', JSON.stringify(tomorrow));
+        }
+        
+        /**
+        * function to check if day has passed, if so sends repeating tasks in tomorrow's list to today's
+        */
+        function checkIfDayHasPassed(){
+            if(localStorage.getItem('tomorrowDay')){
+                
+                var today = new Date();
+                var dd = String(today.getDate()).padStart(2, '0');
+                var mm = String(today.getMonth() + 1).padStart(2, '0'); //January is 0!
+                var yyyy = today.getFullYear();
+                today = mm + '/' + dd + '/' + yyyy;
+                
+                let tomorrow = JSON.parse(localStorage.getItem('tomorrowDay'));
+                
+                console.log("Day passed if same.");
+                console.log("Today: " + today);
+                console.log("Tomorow: " + tomorrow);
+                console.log("Has day passed? " + (today == tomorrow));
+                
+                //if today is equal to tomorrow(which would have been saved yesterday), than day has passed and we transfer repeating tasks from
+                //  tommorow's task list to today's
+                if(today == tomorrow){
+                    let iterNode = taskListsArray[1].head;
+                    while (iterNode) {
+                        taskListsArray[0].add(iterNode.task, iterNode.taskRepeating);
+                        taskListsArray[1].removeTask(iterNode);
+                        
+                        iterNode = iterNode.next;
+                    }
+                }
+                    
+            }
+        }
+    
+     
+        
+    </script>
+    
+    
+
+	<div class="jumbotron text-center">
+        <h1 class="display-4"><a href="dailytodo.html">Daily ToDo</a> | <a href="scheduler.html">Scheduler</a></h1>
+	  <p>Help you stay on track!</p>
+	</div>
+    
+    <div class="text-center title">
+      <h2 class="display-4">Daily ToDo</h2>
+    </div>
+
+	<div class="container">
+	  <div class="row">
+		<div class="col-sm-6">
+            
+            
+            <div id="scheduler_area">
+            
+                <!--      Scheduler object buttons      -->
+                
+                
+            </div>
+            
+            <div class="text-center" style=" margin-top: 5%">
+                <!--      Today Button      -->
+              <button id="todayButton" type="button" class="btn btn-primary">Today</button>
+            </div>
+            
+            <div class="text-center" style=" margin-top: 5%">
+                <!--      Tomorrow Button      -->
+              <button id="tomorrowButton" type="button" class="btn btn-primary">Tomorrow</button>
+            </div>
+            
+            
+		</div>
+          
+          
+          
+		<div class="col-sm-6"> 
+             
+            <div class="text-center">
+                <!--      Task List Title      -->
+                <h3 id="taskListTitle">Today's Tasks</h3>  
+            </div>
+            
+            
+            <div class="container" style="width: 100%;"> 
+              <table class="table table-striped" id="todo_table" >
+                  <!--      Task data table      -->
+                <thead>
+                  <tr>
+                    <th>Task</th>
+                    <th>Repeat?</th>
+                    <th>Done?</th>
+                  </tr>
+                </thead>
+                
+                <tbody id="taskArea">
+                    <!--      Tasks area where rows are added      -->
+                  
+                    
+                </tbody>
+              </table>
+            </div>
+            
+            
+         
+            
+            
+            
+            
+            <div class="text-center">
+                <h3>Add new task:</h3>  
+            </div>
+            
+            <div class="col-xs-8">
+                <!--      Task text input field      -->
+                <input type="text" class="form-control" id="taskInput" aria-describedby="taskEnter" placeholder="enter new task...">
+                
+            </div>
+            
+            <!--      Task input button      -->
+            <button type="button" class="btn btn-success" id="addButton">Add</button>
+            
+            
+            
+            
+		</div>
+		
+	  </div>
+		
+	  
+	</div>
+    
+    <!-- Footer -->
+    <footer class="page-footer font-small blue" id="footer">
+
+        <div class="footer-copyright text-center py-3">Version: 11_28_2019. Made by Heriberto Flores
+        </div>
+
+    </footer>
+    <!-- Footer -->
+</body>
+
+</html>

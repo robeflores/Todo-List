@@ -1,0 +1,35 @@
+.title{
+    
+    text-shadow: 2px 2px lightgray;
+}
+
+#footer{
+    margin-top: 10%;
+}
+
+/*styling for the repeat toggle button set to true of each row*/
+.repeatButton{
+    color: white !important;
+    background-color: dodgerblue !important;
+    border-color: royalblue !important;
+    
+}
+.repeatButton:hover {
+  background-color: #84c0fa !important; 
+}
+
+/*styling for the repeat toggle button set to false of each row*/
+.dontRepeatButton{
+    color: dodgerblue !important;
+    background-color: white !important;
+    border-color: dodgerblue !important;
+}
+.dontRepeatButton:hover {
+  background-color: #bddeff!important; 
+}
+
+@media (max-width: 770px) {
+    #taskListTitle{
+        margin-top: 10%;
+    }
+}

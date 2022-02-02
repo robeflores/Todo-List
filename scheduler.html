@@ -1,0 +1,1188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Scheduler</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/css/bootstrap.min.css">
+    <link rel="stylesheet" href="scheduler.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script> 
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/js/bootstrap.min.js"></script>
+    
+</head>
+
+<body>
+    
+    <script>
+        "use strict";
+        
+        /**
+        * Class to represent a node in the schedule linked list or a row in the graphical table representation of the linked list.
+        *   row node has a columns array which keeps track of each column data in the row. Each row node also has a reference
+        *   to the next row node in the schedule linked list.
+        */
+        class RowNode { 
+            // constructor 
+            constructor(numberOfColumns) 
+            { 
+                this.columns = [];
+                this.next = null;
+                
+                // for each column in our linked list we add new data in the row corresponding to the column. white space by default
+                for(let i = 0; i < numberOfColumns; i++){
+                    this.columns.push('<br />   ');
+                }
+                //console.log("ROW LENGTH: " + this.columns.length);
+            }
+        }
+        
+        /**
+        * Class to represent a schedule linked list. Member variable 'head' is reference to the first node in the list 
+        *   'size' is the count of nodes in the linked list.
+        */
+        class scheduleLinkedList { 
+            constructor(numOfColumns) 
+            { 
+                this.columns = []; // array used to keep track of the columns of the schedule
+                
+                for(let i = 0; i < numOfColumns; i++){
+                    this.columns.push("Column " + (i + 1)); // columns start of with the generic name of 'Column #'
+                }
+                //console.log("COLUMN LENGTH " + this.columns.length);
+                
+                this.name = "New Schedule"; // keeps track of the schedules name. can be changed
+                this.hasGraphic = false; // used to keep track of whether the schedules button has been drawn.
+                this.scheduleButton = null; // used to store the actual graphical button object
+                this.head = null;  // used to keep track of the first node in the linked list aka the head node.
+                this.size = 0; // used to keep track of the nodes in the linked list. represents the linked list's size
+            }
+            
+            /**
+            * adds new column to the schedule linked list
+            */
+            addColumn(){
+                this.columns.push("Column " + (this.columns.length + 1)); // gives it a starting generic name
+                
+                // adds to each row node in the schedule linked list the new column
+                let iterNode = this.head; 
+                while (iterNode) {
+                    iterNode.columns.push('<br />   ');
+                    
+                    iterNode = iterNode.next; 
+                } 
+            }
+            
+            /**
+            * Adds a new row node to the end of the schedule linked list
+            */
+            addRowNode() 
+            { 
+                // creates a new row node 
+                let node = new RowNode(this.columns.length); 
+
+                // 'iterNode' is used to iterate through schedule linked list
+                let iterNode; 
+
+                // if the schedule linked list is Empt, add the row node and make it the head 
+                if (this.head == null) 
+                    this.head = node; 
+                else { 
+                    iterNode = this.head; 
+
+                    // iterate to the end of the linked list 
+                    while (iterNode.next) { 
+                        iterNode = iterNode.next; 
+                    } 
+
+                    // add new row node 
+                    iterNode.next = node; 
+                } 
+                this.size++; // linked list increase in size
+                return node; // return the new node
+            }
+            
+            /**
+            * This function inserts the argument 'rowNode' at the argument 'index' in the schedule linked list
+            * @param rowNode: row node to insert
+            * @param index: index to insert row node at in schedule linked list
+            */
+            insertAt(rowNode, index) 
+            { 
+                let node = rowNode;
+                let iterNode = this.head; 
+
+                // insert the element to the first index 
+                if (index == 0) { 
+                    node.next = this.head; 
+                    this.head = node;
+                }
+                // add at tail
+                else if (index >= this.size){
+                    iterNode = this.getNodeAt(this.size-1);
+                    iterNode.next = node;
+                }
+                else { 
+                    iterNode = this.head;   
+                    let prevNode = null;
+                    let i = 0; 
+
+                    // iterate over the list to find 
+                    // the position to insert 
+                    while (i < index) { 
+                        i++; 
+                        prevNode = iterNode; 
+                        iterNode = iterNode.next; 
+                    } 
+
+                    // adding an element 
+                    node.next = iterNode; 
+                    prevNode.next = node; 
+                } 
+                this.size++; 
+
+            }
+            
+            /**
+            * This function removes the row node found at the argument 'index' in the schedule linked list
+            * @param index: index to remove from
+            */
+            removeFrom(index) 
+            { 
+                // if index is invalid, we return -1
+                if (index < 0 || index > this.size) 
+                    return -1;
+                else {
+                    let iterNode = this.head; 
+                    let prevNode = iterNode;
+                    let i = 0; 
+
+                    // deleting the first row node
+                    if (index == 0) { 
+                        this.head = iterNode.next; 
+                    }
+                    else { 
+                        // iterate over the list to the position to remove the row node
+                        while (i < index) { 
+                            i++; 
+                            prevNode = iterNode; 
+                            iterNode = iterNode.next; 
+                        } 
+
+                        // remove the row node 
+                        prevNode.next = iterNode.next; 
+                    } 
+                    this.size--; 
+
+                    // return the row node 
+                    return iterNode.task; 
+                } 
+            }
+            
+            /**
+            * This function returns the row node found at the argument 'index' in the schedule linked list
+            * @param index: index to return row node from
+            */
+            getNodeAt(index) 
+            { 
+                // invbalid index
+                if (index < 0 || index > this.size) 
+                    return null; 
+                else { 
+                    let iterNode = this.head;
+                    let i = 0;
+                    
+                    // iterate through linked list until index has been reached
+                    while (i < index) {  
+                        iterNode = iterNode.next;
+                        i++;
+                    } 
+
+                    // return the node at the desired index
+                    return iterNode; 
+                } 
+            } 
+            
+            
+            
+            //HELPER METHODS
+            
+            
+            // prints the linked list
+            printList() 
+            { 
+                var str = "\n";
+                
+                // adds columns to str
+                for (let i = 0; i < this.columns.length; i++){
+                    str += this.columns[i] + " ";
+                }
+                str += " \n";
+                
+                // adds rows to str
+                let iterNode = this.head; 
+                while (iterNode) {
+                    for(let i = 0; i < iterNode.columns.length; i++){
+                        str += iterNode.columns[i] + " ";
+                    }
+                    str += " \n";
+                    
+                    iterNode = iterNode.next; 
+                } 
+                console.log("List: " + str); 
+            } 
+            
+            
+        } 
+        
+        
+        // keeps track of each and every schedule linked list created by the user
+        let schedulesArray = [];
+        
+        // tracks the last used table index in 'schedulesArray', saved to local storage and on load the table at this index is loaded for display
+        let activeScheduleIndex = 0;
+        
+        /**
+        * this function keeps the footer at the end of the document at all times, called everytime the document is changed in someway
+        */ 
+        function KeepFoot() {
+            var docHeight = $(window).height(); // gets the document height
+            var footerHeight = $('#footer').height(); // gets the footer height
+            var footerTop = $('#footer').position().top + footerHeight; // gets the position of the top footer plus its height
+            
+            //if the footer position is less then document height
+            if (footerTop < docHeight) {
+                $('#footer').css('margin-top', (docHeight - footerTop) + 'px'); // place it at the bottom
+            }
+        }
+        
+        // this function runs only after the webpage is ready for DOM manipulation
+        $(document).ready(function(){
+            
+            // gives the button used to create a new schedule the function to add a new schedule
+            $("#createScheduleButton").click(function(){
+                addNewSchedule();
+            });
+            
+            
+            
+            loadSchedulesFromLocalStorage(); //loads schedule data from local storage and sets up the schedule for use by the user
+            KeepFoot(); // keeps the footer at the bottom
+        });
+        
+        /**
+        * saves schedule data to local storage
+        */ 
+        function saveSchedulesToLocalStorage(){
+            saveScheduleNamesToLocalStorage(); // saves schedule names to local storage
+            saveScheduleColumnsToLocalStorage(); // saves column text to local storage
+            saveScheduleRowsToLocalStorage(); // saves row text to local storage
+            saveActiveScheduleIndex(); // saves the index corresponding the active schedule in 'schedulesArray'
+        }
+        
+        /**
+        * saves the active schedule index
+        */ 
+        function saveActiveScheduleIndex(){
+            localStorage.setItem('activeScheduleIndex', JSON.stringify(activeScheduleIndex));
+        }
+        
+        /**
+        * saves each schedule name to local storage
+        */ 
+        function saveScheduleNamesToLocalStorage(){
+            let scheduleNames = new Array(); // array of schedule names to save to local storage
+            for(let i = 0; i < schedulesArray.length; i++){
+                scheduleNames[i] = schedulesArray[i].name;
+            }
+            
+            /*
+            console.log("\n Now Printing stored schedule names");
+            for(let i = 0; i < scheduleNames.length; i++)
+                console.log("Schedule: " + scheduleNames[i]);
+            */
+            
+            localStorage.setItem('scheduleNames', JSON.stringify(scheduleNames)); // save the schedule names array to local storage using stringify
+        }
+        
+        /**
+        * saves each schedule's columns to local storage
+        */ 
+        function saveScheduleColumnsToLocalStorage(){
+            let scheduleColumns = new Array(); // first array represents schedules
+            
+            for(let i = 0; i < schedulesArray.length; i++){
+                scheduleColumns[i] = new Array(); // second array represents columns per schedule
+                for(let j = 0; j < schedulesArray[i].columns.length; j++)
+                    scheduleColumns[i][j] = schedulesArray[i].columns[j];
+            }
+            
+            /*
+            console.log("\n Now Printing stored schedule columns");
+            for(let i = 0; i < scheduleColumns.length; i++){
+                console.log("Schedule #" + i + ": ");
+                console.log("Columns: ");
+                for(let j = 0; j < scheduleColumns[i].length; j++)
+                    console.log(scheduleColumns[i][j] + " ");
+            }
+            */
+            
+            localStorage.setItem('scheduleColumns', JSON.stringify(scheduleColumns));
+        }
+        
+        /**
+        * saves each row and its data of each schedule to local storage
+        */ 
+        function saveScheduleRowsToLocalStorage(){
+            let scheduleRows = new Array(); // first array represents schedules
+            
+            for(let i = 0; i < schedulesArray.length; i++){
+                scheduleRows[i] = new Array(); // second array represents rows in schedule
+                
+                let curr = schedulesArray[i].head;
+                let j = 0;
+                while(curr){
+                    scheduleRows[i][j] = new Array(); // third array represents the data of each row of each schedule
+                    
+                    for(let h = 0; h < curr.columns.length; h++){
+                        scheduleRows[i][j][h] = curr.columns[h]; // store row data
+                    }
+                    
+                    j++;
+                    curr = curr.next;
+                }
+            }
+            
+            /*
+            console.log("\n Now Printing stored schedule rows");
+            for(let i = 0; i < scheduleRows.length; i++){
+                console.log("Schedule #" + i + ": ");
+                console.log("Rows: ");
+                for(let j = 0; j < scheduleRows[i].length; j++){
+                    for(let h = 0; h < scheduleRows[i][j].length; h++)
+                        console.log(scheduleRows[i][j][h] + " ");
+                    console.log("\n");
+                }
+            }
+            */
+            
+            localStorage.setItem('scheduleRows', JSON.stringify(scheduleRows));
+        }
+        
+        /**
+        * loads data from each of the stored arrays to reconstruct the schedules
+        */ 
+        function loadSchedulesFromLocalStorage(){
+            if(!localStorage.getItem('scheduleNames') || !localStorage.getItem('scheduleColumns') || !localStorage.getItem('scheduleRows'))
+                return;
+            
+            let loadedActiveScheduleIndex = JSON.parse(localStorage.getItem('activeScheduleIndex'));
+            let loadedScheduleNames = JSON.parse(localStorage.getItem('scheduleNames'));
+            let loadedScheduleColumns = JSON.parse(localStorage.getItem('scheduleColumns'));
+            let loadedScheduleRows = JSON.parse(localStorage.getItem('scheduleRows'));
+            
+            // no schedules are stored, return
+            if(loadedScheduleNames.length == 0)
+                return;
+            
+            let activeSchedule = null;
+            
+            // for each schedule
+            for(let i = 0; i < loadedScheduleNames.length; i++){
+                let schedule = new scheduleLinkedList(); // make a new schedule
+                schedule.name = loadedScheduleNames[i]; // with its name set to the stored value
+                
+                //for each column
+                for(let j = 0; j < loadedScheduleColumns[i].length; j++){
+                    schedule.addColumn(); // add a column to the schedule
+                    schedule.columns[j] = loadedScheduleColumns[i][j]; // set the column value
+                }
+                
+                //for each row
+                for(let j = 0; j < loadedScheduleRows[i].length; j++){
+                    schedule.addRowNode(); // add a row to the schedule
+                    let node = schedule.getNodeAt(j);
+                    for(let h = 0; h < loadedScheduleRows[i][j].length; h++){ // for each row in the schedule
+                        node.columns[h] = loadedScheduleRows[i][j][h]; // set the row value to the stored one
+                    }
+                }
+                
+                
+                //add the loaded schedule object to the schedules array
+                schedulesArray.push(schedule);
+                let scheduleGraphic = new Schedule(schedule);
+                
+                // load active schedule
+                if(i == loadedActiveScheduleIndex)
+                    activeSchedule = schedule;
+                    
+            }
+            
+            // draw the active schedule last
+            let activeScheduleGraphic = new Schedule(activeSchedule);
+        }
+        
+        /**
+        * add new schedule linked list and draw it to html/css to display to user
+        */ 
+        function addNewSchedule(){
+            // creates a new linked list and add it to 'schedulesArray'
+            let schedule = new scheduleLinkedList(2);
+            schedulesArray.push(schedule);
+            //console.log("schedule added");
+            //schedule.printList();
+            
+            schedule.addRowNode(); // by default add a new row node
+            let scheduleGraphic = new Schedule(schedule); // draw the schedule to screen
+            
+            saveSchedulesToLocalStorage(); // save changes
+        }
+        
+        
+        /**
+        * graphically represents a schedule linked list. Draws buttons, rows, columns, fields upon creation
+        *   as well as adds functionality to all of them
+        */
+        class Schedule{
+            
+            constructor(scheduleLinkedList){
+                
+                this.drawScheduleButton(scheduleLinkedList); // draws the schedule's button
+                
+                
+                this.drawColumns(scheduleLinkedList); // draws the columns of the schedule linked list
+                
+                
+                this.drawRows(scheduleLinkedList); // draws the columns of the schedule linked list
+                
+                
+                this.drawTitle(scheduleLinkedList); // draws the title of the schedule linked list
+                
+                
+                this.drawAddRowButton(scheduleLinkedList); // draws the "ADD ROW" button of the schedule linked list
+                
+                
+                this.drawAddColumnButton(scheduleLinkedList); // draws the "ADD COLUMN" button of the schedule linked list
+                
+                
+                KeepFoot(); // keeps the footer at the bottom
+            }
+            
+            /**
+            * draws a button to represent the schedule. can be clicked on to make the schedule active
+            * button is only drawn if it doesnt already exist, otherwise we dont draw the button
+            */
+            drawScheduleButton(linkedList){
+                if(linkedList.hasGraphic == false){ // if the button hasnt already been drawn
+                
+                    //DRAW SCHEDULE BUTTON
+                    
+                    let scheduleButton = document.createElement("button");
+                    scheduleButton.type = "button";
+                    scheduleButton.textContent = linkedList.name;
+                    scheduleButton.className = "btn btn-primary text-center scheduleButton";
+                    scheduleButton.id = "scheduleButton";
+                    scheduleButton.style.display = "block";
+                    
+                    // place the button in the designated area for it in the document
+                    $("#scheduleButtonsArea").append(scheduleButton);
+                    
+                    let isDeletingSchedule = false; // used to prevent a graphical and functional problem with the delete button
+                    scheduleButton.addEventListener("click", function(){ //if we click on the schedule button, we make it active
+                        if(!isDeletingSchedule){
+                            let newSchedule = new Schedule(linkedList); // redraw the linked list table graphic tied to the button
+                            activeScheduleIndex = schedulesArray.indexOf(linkedList); // document the new active schedule index
+                            //console.log("ACTIVE SCHEDULE: " + activeScheduleIndex);
+                            saveSchedulesToLocalStorage(); // save changes
+                        }
+                    });
+                    
+                    let scheduleDeleteTimeoutId = 0; // id created by setTimeout function. used to refer the specific timeout instance
+                    $(scheduleButton).on('mousedown', function() { //if we hold the mouse down for 500ms, this function runs
+                        scheduleDeleteTimeoutId = setTimeout(function(event) {
+                            
+                            isDeletingSchedule = true; // makes sure that other functions do not run while 'isDeletingSchedule' is true
+                            
+                            //create the delete button
+                            let scheduleDeleteButton = document.createElement("button");
+                            scheduleDeleteButton.type = "button";
+                            scheduleDeleteButton.textContent = "Delete";
+                            scheduleDeleteButton.className = "btn btn-danger text-center";
+                            scheduleDeleteButton.style.display = "block";
+                            scheduleDeleteButton.style.position = "fixed";
+                            
+                            //position the delete button next to the schedule button
+                            var position = $(scheduleButton).offset();
+                            $(scheduleDeleteButton).css({top: position.top - $(window).scrollTop(), left: (position.left + $(scheduleButton).width() + 30)});
+                            
+                            $("#body").append(scheduleDeleteButton);
+                            
+                            // if pressed, delete the schedule
+                            scheduleDeleteButton.addEventListener('mousedown', function(event) {
+                                isDeletingSchedule = false;
+                                
+                                scheduleDeleteButton.remove();
+                                scheduleButton.remove();
+                                
+                                let index = schedulesArray.indexOf(linkedList);
+                                if (index != -1){
+                                    schedulesArray.splice(index, 1);
+                                    //console.log("deleting schedule in array");
+                                }
+                                
+                                //if the active schedule is the one we just deleted, empty the entire table area as we have deleted it
+                                if(activeScheduleIndex == index){
+                                    $("#scheduleTitleArea").empty();
+                                    $("#columnArea").empty();
+                                    $("#rowArea").empty();
+                                    $("#addColumnButtonArea").empty();
+                                    $("#addRowButtonArea").empty();
+                                }
+                                
+                                saveSchedulesToLocalStorage();
+                                KeepFoot();
+                                
+                            });
+                            
+                            //if we click anywhere else on the document other than the delete button, we delete the button
+                            $(document).on("mousedown", function(event) {
+                            if (!$(event.target).is(scheduleDeleteButton))
+                            {
+                                isDeletingSchedule = false;
+                                
+                                scheduleDeleteButton.remove();
+                            }
+                        });
+
+                            
+                        }, 500);
+                    }).on('mouseup mouseleave mousemove', function() { // if we let go of the mouse, move the mouse, or unpoint the mouse, we cancel the timeout
+                        clearTimeout(scheduleDeleteTimeoutId);
+                    });
+                    
+                    // the linked list schedule now has a button associated with it
+                    linkedList.hasGraphic = true;
+                    linkedList.scheduleButton = scheduleButton;
+                    
+                    // sortable function allows us to sort by dragging schedule buttons
+                    let startIndex = null;
+                    $("#scheduleButtonsArea").sortable({
+                        cancel: '',
+                        start: function(event, ui) {
+                            startIndex = ui.item.index();
+                            //console.log('button sort start: ' + startIndex);
+                        },
+                        stop: function(event, ui) {
+                            let endIndex = ui.item.index();
+                            
+                            let valueAtStartIndex = schedulesArray[startIndex]; // get linked list at start of sort
+                            schedulesArray.splice(startIndex, 1); // remove the linked list at start
+                            
+                            schedulesArray.splice(endIndex, 0, valueAtStartIndex); // place linked list at end
+                            //console.log('button sort update: ' + endIndex);
+                            
+                            //let newSchedule = new Schedule(linkedList);
+                            if(activeScheduleIndex == startIndex)
+                                activeScheduleIndex = endIndex; // refreshes the active schedule
+                            
+                            
+                            saveSchedulesToLocalStorage(); // save changes
+                        }
+                    });
+                    $( "#scheduleButtonsArea" ).disableSelection();
+                }
+            }
+            
+            
+            /**
+            * draws the columns of the linked list and sets up functionality
+            */
+            drawColumns(linkedList){
+                
+                $("#columnArea").empty();  // empty previous columns in the document area designated for columns
+                
+                // add column row graphic to table
+                let columnRow = document.createElement("tr");
+                columnRow.id = "columnSortableRowArea";
+                for(let i = 0; i < linkedList.columns.length; i++){
+                    let columnTH = document.createElement("th");
+                    columnRow.appendChild(columnTH); // add column th to row
+                    
+                    let columnChangeTextField = document.createElement("input");
+                    columnChangeTextField.type = "text";
+                    columnChangeTextField.style.display = 'none';
+                    
+                    let columnText = document.createElement("p");
+                    columnText.innerHTML = linkedList.columns[i];
+                    
+                    columnTH.appendChild(columnText); // add the column text to the th
+                    columnTH.appendChild(columnChangeTextField); // add the column input text field to the th
+                    
+                    // sort the columns by dragging
+                    let startIndex = null;
+                    $(columnRow).sortable({
+                        start: function(event, ui) {
+                            startIndex = ui.item.index();
+                            //console.log('column sort start: ' + ui.item.index());
+                        },
+                        stop: function(event, ui) {
+                            let endIndex = ui.item.index();
+                            
+                            let valueAtStartIndex = linkedList.columns[startIndex]; // get column at start index
+                            linkedList.columns.splice(startIndex, 1); // delete column at start index
+                            
+                            linkedList.columns.splice(endIndex, 0, valueAtStartIndex); // add back column at end index
+                            //console.log('column sort update: '+ endIndex);
+                            
+                            
+                            // for each row in schedule
+                            let iterNode = linkedList.head;
+                            while(iterNode){
+                                valueAtStartIndex = iterNode.columns[startIndex]; // get row value in node corresponding to the column index
+                                iterNode.columns.splice(startIndex, 1); // delete th row value in node corresponding to the column index
+
+                                iterNode.columns.splice(endIndex, 0, valueAtStartIndex); // add back row value back at end index
+                                
+                                iterNode = iterNode.next;
+                            }
+                            
+                            saveSchedulesToLocalStorage(); // save changes
+                            
+                            let newSchedule = new Schedule(linkedList);
+                        }
+                    });
+                    $( "#columnSortableRowArea" ).disableSelection();
+                    
+                
+                    let isDeletingColumn = false;
+                    columnText.addEventListener("click", function(){ // if we click on the column text we display the edit text input field
+                        setTimeout(function(){
+                            if (!isDeletingColumn){
+                                columnText.innerHTML = '';
+                                columnChangeTextField.style.display = 'block';
+                                columnChangeTextField.focus();
+                            }
+                        }, 100);
+                    });
+                    
+                    var columnDeleteTimeoutId = 0;
+                    $(columnText).on('mousedown', function() { // if held for 500ms, delete button pops up
+                        columnDeleteTimeoutId = setTimeout(function(event) {
+                            
+                            isDeletingColumn = true;
+                            
+                            let columnDeleteButton = document.createElement("button");
+                            columnDeleteButton.type = "button";
+                            columnDeleteButton.textContent = "Delete";
+                            columnDeleteButton.className = "btn btn-danger text-center";
+                            columnDeleteButton.style.display = "block";
+                            columnDeleteButton.style.position = "fixed";
+
+                            var position = $(columnText).offset(); // position of pop up delete button
+                            $(columnDeleteButton).css({top: (position.top - $(window).scrollTop() - $(columnText).height() - 30), left: position.left});
+                            
+                            
+                            $("#body").append(columnDeleteButton);
+                            
+                            // if the column delete button is pressed, we delete the column from the table as well as from the linked list
+                            columnDeleteButton.addEventListener('mousedown', function(event) {
+                                isDeletingColumn = false;
+                                
+                                columnDeleteButton.remove();
+                                
+                                let column = columnTH;
+                                let i = 0;
+                                    while((column = column.previousElementSibling) != null)
+                                        ++i;
+                                //console.log("Index of column you are trying to delete is: " + i);
+                                linkedList.columns.splice(i, 1); // delete the column from the linked list
+                                
+                                // delete the corresponding column from each row node
+                                let iterNode = linkedList.head;
+                                while(iterNode){
+                                    iterNode.columns.splice(i, 1);
+                                    iterNode = iterNode.next;
+                                }
+                                
+                                // save changes
+                                saveSchedulesToLocalStorage();
+                                
+                                let newSchedule = new Schedule(linkedList);
+                            });
+                            
+                            // if we click down or move mosuewheel in document
+                            $(document).on("mousedown wheel", function(event) {
+                                // if it is not the delete button
+                                if (!$(event.target).is(columnDeleteButton))
+                                {
+                                    isDeletingColumn = false;
+                                    columnDeleteButton.remove(); // we remove the delete button
+                                }
+                            });
+
+                            
+                        }, 500);
+                    }).on('mouseup mouseleave mousemove', function() {
+                        clearTimeout(columnDeleteTimeoutId);
+                    });
+                    
+                    // if we press enter while the text input field is active, overwrite the column text
+                    columnChangeTextField.addEventListener("keyup", function(event){
+                        // pressed enter
+                        if (event.keyCode == 13){
+                            if(columnChangeTextField.value == "") // if input field is empty, we give the column some underscores
+                                columnChangeTextField.value = "___";
+                            
+                            // get index of column we are trying to edit
+                            let column = columnTH;
+                            let i = 0;
+                                while((column = column.previousElementSibling) != null)
+                                    ++i;
+                            //console.log("Index of column in row you are trying to edit is: " + i);
+                            
+                            // overwrite the column value
+                            linkedList.columns[i] = columnChangeTextField.value;
+                            columnText.innerHTML = columnChangeTextField.value;
+                            columnChangeTextField.style.display = 'none'; // hide the text input field
+                            
+                            saveSchedulesToLocalStorage(); // save changes
+                            
+                            let newSchedule = new Schedule(linkedList); // redraw the graphic
+                        }
+                        
+                    });
+
+                    //if the column change text input field is active and we click away, we hide it and save the data within it if it is not null
+                    $(document).click(function(event) {
+                        if (columnChangeTextField.style.display == 'block' && !$(event.target).is(columnChangeTextField))
+                        {   
+                            // get column index
+                            let column = columnTH;
+                            let i = 0;
+                                while((column = column.previousElementSibling) != null)
+                                    ++i;
+                            //console.log("Index of column in row you are trying to edit is: " + i);
+                            
+                            // if text input field is not empty,  we overwrite the current column value
+                            if(columnChangeTextField.value.length != 0){
+                                linkedList.columns[i] = columnChangeTextField.value;
+                                
+                                saveSchedulesToLocalStorage();
+                                
+                                let newSchedule = new Schedule(linkedList); // redraw the table
+                            }
+                            columnText.innerHTML = linkedList.columns[i];
+                            columnChangeTextField.style.display = 'none'; // hide the text input field
+                        }
+                    });
+                    
+                }
+                $("#columnArea").append(columnRow);
+            }
+            
+            
+            /**
+            * draws each row of the linked list and sets up functionality
+            */
+            drawRows(linkedList){
+                $("#rowArea").empty(); // empty previous rows in the document area designated for rows
+                
+                // add row graphics to table
+                let isDeletingRow = false;
+                // iterate through each row node in the linked list, draw it and add funcitonality
+                let iterNode = linkedList.head;
+                while (iterNode) {
+                    let nodeDataRow = document.createElement("tr");
+                    for(let i = 0; i < iterNode.columns.length; i++){
+                        let rowTD = document.createElement("td");
+                        nodeDataRow.appendChild(rowTD);
+                        
+                        //text area which is sued to edit the row text, normally hidden
+                        let rowChangeTextArea = document.createElement("textArea");
+                        rowChangeTextArea.cols = "50";
+                        rowChangeTextArea.style.display = 'none';
+                        
+                        //row text corresponding to column
+                        let rowText = document.createElement("p");
+                        rowText.innerHTML = iterNode.columns[i];
+                        rowTD.appendChild(rowText);
+                        rowTD.appendChild(rowChangeTextArea);
+                        
+                        
+                        //if we click on the row text, we display the text area to edit it
+                        rowText.addEventListener("click", function(){
+                            setTimeout(function(){
+                                if(!isDeletingRow){
+                                    let str = rowText.innerHTML;
+                                    str = str.replace(/<br\s*[\/]?>/gi, "\n"); // replace the innerHTML's newline characters with such as <br> with \n
+                                    if(/^\s*$/.test(str)){
+                                        //console.log("WHITESPACE ONLY: TRUE");
+                                        rowChangeTextArea.innerHTML = '';
+                                    }
+                                    else
+                                        rowChangeTextArea.innerHTML = str;
+                                    rowText.innerHTML = ''; // hide the row text by making it empty
+                                    rowChangeTextArea.style.display = 'block'; // displays the text area
+                                    rowChangeTextArea.style.height = "1px";
+                                    rowChangeTextArea.style.height = (25 + rowChangeTextArea.scrollHeight)+ "px";
+                                    rowChangeTextArea.focus(); // makes the cursor focus to it
+                                    rowChangeTextArea.setSelectionRange(rowChangeTextArea.value.length, rowChangeTextArea.value.length);
+                                }
+                            }, 100);
+                        });
+                        
+                        // as we type inside the text area, adjust its height naturally
+                        rowChangeTextArea.addEventListener("keyup", function(event){
+                            rowChangeTextArea.style.height = "1px";
+                            rowChangeTextArea.style.height = (25 + rowChangeTextArea.scrollHeight)+ "px";
+
+                        });
+                        
+                        
+                        //if we click anywhere other than the text area, we hide and overwrite changes made to the row text
+                        $(document).mousedown(function(event) {
+                            if (rowChangeTextArea.style.display == 'block' && !$(event.target).is(rowChangeTextArea))
+                            {
+                                //get column index i
+                                let rowData = rowTD;
+                                let i = 0;
+                                    while((rowData = rowData.previousElementSibling) != null)
+                                        ++i;
+                                //console.log("Index of column in row you are trying to edit is: " + i);
+                                
+                                // get row index j
+                                let row = nodeDataRow;
+                                let j = 0;
+                                    while((row = row.previousElementSibling) != null)
+                                        ++j;
+                                //console.log("Index of row you are trying to edit is: " + j);
+                                
+                                // iterate until iterNode equals correct row node
+                                let iterNode = linkedList.head
+                                for(let h = 0; h < j; h++){
+                                    iterNode = iterNode.next;
+                                }
+                                
+                                if(rowChangeTextArea.value.length == 0)
+                                    rowChangeTextArea.value = '<br />   ';
+                                else
+                                    rowChangeTextArea.value = rowChangeTextArea.value.replace(/\n\r?/g, '<br />');
+
+                                
+                                // replace values at correct column i in node 'iterNode'
+                                iterNode.columns[i] = rowChangeTextArea.value;
+
+                                saveSchedulesToLocalStorage(); // save changes
+
+                                let newSchedule = new Schedule(linkedList); // redraw table
+                                
+                                rowText.innerHTML = iterNode.columns[i];
+                                rowChangeTextArea.style.display = 'none';
+                            }
+                        });
+                        
+                        
+                       $("#rowArea").append(nodeDataRow);
+                    }
+                    
+                    //if we hold down the row text for 500ms, we draw a delete row button
+                    var rowDeleteTimeoutId = 0;
+                    $(nodeDataRow).on('mousedown', function() {
+                        rowDeleteTimeoutId = setTimeout(function(event) {
+                            
+                            isDeletingRow = true;
+                            
+                            let rowDeleteButton = document.createElement("button");
+                            rowDeleteButton.type = "button";
+                            rowDeleteButton.textContent = "Delete";
+                            rowDeleteButton.className = "btn btn-danger text-center";
+                            rowDeleteButton.style.display = "block";
+                            rowDeleteButton.style.position = "fixed";
+                            
+                            $("#body").append(rowDeleteButton);
+                            
+                            var position = $(nodeDataRow).offset();
+                            $(rowDeleteButton).css({top: position.top - $(window).scrollTop() + 5, left: (position.left + $(nodeDataRow).width() + 5)});
+                            
+                            //if we press delete button, we delete the row at the active schedule
+                            rowDeleteButton.addEventListener('mousedown', function(event) {
+                                isDeletingRow = false;
+                                
+                                rowDeleteButton.remove();
+                                
+                                let row = nodeDataRow;
+                                let i = 0;
+                                    while((row = row.previousElementSibling) != null)
+                                        ++i;
+                                //console.log("Index of row you are trying to delete is: " + i);
+                                linkedList.removeFrom(i); // remove from linked list
+                                
+                                saveSchedulesToLocalStorage();
+                                
+                                let newSchedule = new Schedule(linkedList); // redraw the table
+                            });
+                            
+                            // if we click on the document and it is not the delete button, we delete the button itself
+                            $(document).on("mousedown wheel", function(event) {
+                            if (!$(event.target).is(rowDeleteButton))
+                            {
+                                isDeletingRow = false;
+                                
+                                rowDeleteButton.remove();
+                            }
+                        });
+
+                            
+                        }, 500);
+                    }).on('mouseup mouseleave mousemove', function() { // otherwise cancel the function if we didnt hold for 500ms
+                        clearTimeout(rowDeleteTimeoutId);
+                    });
+                    
+                    
+                    iterNode = iterNode.next; // next row node
+                    
+                    
+                }
+                
+                // sort the rows
+                let nodeToSwitch = null;
+                $( "#rowArea" ).sortable({
+                    start: function(event, ui) {
+                        let startIndex = ui.item.index();
+                        
+                        nodeToSwitch = new RowNode(); // create new node to add to end index
+                        nodeToSwitch.columns = linkedList.getNodeAt(startIndex).columns; // node first stores the current data at start index
+                        linkedList.removeFrom(startIndex); // remove row node from starting index
+                        //console.log('start: ' + startIndex);
+                    },
+                    stop: function(event, ui) {
+                        let endIndex = ui.item.index();
+                        
+                        linkedList.insertAt(nodeToSwitch, endIndex); // insert row node at ending index
+                        //console.log('update: ' + endIndex);
+                        
+                        saveSchedulesToLocalStorage();
+                    }
+                });
+                $( "#rowArea" ).disableSelection();
+            }
+            
+            /**
+            * draws the schedule title and adds funtionality to change it
+            */
+            drawTitle(linkedList){
+                //ADD SCHEDULE TITLE
+                $("#scheduleTitleArea").empty();
+                
+                let scheduleTitle = document.createElement("h3");
+                scheduleTitle.textContent = linkedList.name;
+                
+                //used to change the schedule title
+                let scheduleTitleTextField = document.createElement("input");
+                scheduleTitleTextField.type = "text";
+                scheduleTitleTextField.style.display = 'none';
+                scheduleTitleTextField.style.position = 'fixed';
+                scheduleTitleTextField.style.left = '50%';
+                
+                $("#scheduleTitleArea").append(scheduleTitle);
+                $("#scheduleTitleArea").append(scheduleTitleTextField);
+                
+                // if we click on schedule title, we display the text input field in order to edit it
+                scheduleTitle.addEventListener("click", function(){
+                    setTimeout(function(){
+                        scheduleTitle.style.display = 'none';
+                        scheduleTitleTextField.style.display = 'block';
+                        scheduleTitleTextField.focus(); // make the text input field active
+                    }, 100);
+                });
+                
+                // if we press enter while the schedule title text input field is active, we hide it and save changes
+                scheduleTitleTextField.addEventListener("keyup", function(event){
+                    // pressed space
+                    if (event.keyCode == 13){
+                        // if input field is empty, we give a generic placeholder for the title
+                        if(scheduleTitleTextField.value == "")
+                            scheduleTitleTextField.value = "___";
+                        
+                        linkedList.name = scheduleTitleTextField.value;
+                        
+                        // hide the input field and show the title text
+                        scheduleTitle.style.display = 'block';
+                        $(scheduleTitle).text(scheduleTitleTextField.value); // give the inpu fields value to the title text
+                        scheduleTitleTextField.style.display = 'none';
+                        linkedList.scheduleButton.textContent = scheduleTitleTextField.value;
+                        
+                        saveSchedulesToLocalStorage(); // save changes
+                        
+                        let newSchedule = new Schedule(linkedList);  // redraw the table
+                    }
+
+                });
+
+                //if the title input field is active and we click away
+                $(document).click(function(event) {
+                    if (scheduleTitleTextField.style.display == 'block' && !$(event.target).is(scheduleTitleTextField))
+                    {
+                        //if the text field is not empty, we replace the title text's value with the value found in the input field
+                        if(scheduleTitleTextField.value.length != 0){
+                            linkedList.name = scheduleTitleTextField.value;
+                            $(scheduleTitle).text(scheduleTitleTextField.value);
+                            linkedList.scheduleButton.textContent = scheduleTitleTextField.value;
+                            
+                            saveSchedulesToLocalStorage();
+                            
+                            let newSchedule = new Schedule(linkedList); // redraw the table
+                        }
+                        scheduleTitle.style.display = 'block';
+                        scheduleTitleTextField.style.display = 'none';
+                    }
+                });
+            }
+            
+            /**
+            * this function draws the ADD ROW button to the document
+            */
+            drawAddRowButton(linkedList){
+                //draw the ADD ROW button to document
+                $("#addRowButtonArea").empty();
+                
+                let addRowButton = document.createElement("button");
+                addRowButton.type = "button";
+                addRowButton.textContent = "Add new row";
+                addRowButton.className = "btn btn-success btn-lg";
+                addRowButton.id = "addRowButton";
+                
+                $("#addRowButtonArea").append(addRowButton);
+                
+                //if clicked on, we add a row node to the linked list
+                addRowButton.addEventListener("click", function(){
+                    linkedList.addRowNode();
+                    
+                    saveSchedulesToLocalStorage(); // save changes
+                    
+                    let newSchedule = new Schedule(linkedList); // redraw the table
+                });
+            }
+            
+            /**
+            * this function draws the ADD COLUMN button to the document
+            */
+            drawAddColumnButton(linkedList){
+                //ADD COLUMN BUTTON
+                $("#addColumnButtonArea").empty();
+                
+                let addColumnButton = document.createElement("button");
+                addColumnButton.type = "button";
+                addColumnButton.textContent = "Add new column";
+                addColumnButton.className = "btn btn-success addColumnButton";
+                addColumnButton.id = "addColumnButton";
+                
+                $("#addColumnButtonArea").append(addColumnButton);
+                
+                //if we click on the add column button, we add a new column to the linked list
+                addColumnButton.addEventListener("click", function(){
+                    linkedList.addColumn();
+                    
+                    saveSchedulesToLocalStorage();
+                    
+                    let newSchedule = new Schedule(linkedList);
+                });
+            }
+            
+        }
+        
+    
+     
+        
+    </script>
+    
+    
+
+	<div class="jumbotron text-center">
+        <h1 class="display-4"><a href="dailytodo.html">Daily ToDo</a> | <a href="scheduler.html">Scheduler</a></h1>
+	  <p>Help you stay on track!</p>
+	</div>
+    
+    <div class="text-center title">
+      <h2 class="display-4">Scheduler</h2>
+    </div>
+
+	<div id="body" class="container">
+	  <div class="row">
+		<div class="col-sm-2" id="leftSide">
+            
+            
+            <div id="scheduleButtonsArea">
+            
+                <!--      schedule object buttons      -->
+                
+                
+            </div>
+            
+            <div class="text-center">
+                <button id="createScheduleButton" type="button" class="btn btn-success">Create new schedule</button>
+                <!--      Create schedule button      -->
+            </div>
+            
+            
+		</div>
+          
+          
+          
+		<div class="col-sm-10" id="rightSide"> 
+             
+            <div class="text-center" id="scheduleTitleArea">
+                <!--      schedule title area      -->
+            </div>
+            
+            
+            <div class="container" style="width: 100%;">
+                
+                <div id="addColumnButtonArea" style="float: right;">
+                    <!--      ADD COLUMN button area      -->
+                </div>
+                
+              <table class="table table-bordered table-striped" id="todo_table" >
+                  
+                <thead id = "columnArea">
+                    <!--     column area      -->
+                </thead>
+                
+                <tbody id="rowArea">
+                  
+                    <!--      row area      -->
+                  
+                    
+                </tbody>
+                  
+              </table>
+                
+                
+            </div>
+            
+            
+            <div id="addRowButtonArea" class="text-center">
+                <!--      ADD ROW button area     -->
+            </div>
+            
+            
+          
+            
+		</div>
+		
+	  </div>
+	  
+	</div>
+    
+    <!-- Footer -->
+    <footer class="page-footer font-small blue" id="footer">
+
+      <div class="footer-copyright text-center py-3">Version: 11_28_2019. Made by Heriberto Flores
+      </div>
+
+    </footer>
+    <!-- Footer -->
+    
+</body>
+
+</html>

@@ -1,0 +1,60 @@
+.title{
+    
+    text-shadow: 2px 2px lightgray;
+}
+
+/*styling for the div where schedule buttons are added*/
+#scheduleButtonsArea{
+    margin: auto;
+}
+
+/*styling for the "ADD SCHEDULE" button*/
+#createScheduleButton{
+    margin: auto;
+    margin-top: 5%;
+}
+
+/*styling for each of the schedule buttons*/
+.scheduleButton{
+    margin: auto !important;
+    margin-top: 5% !important;
+}
+
+/*styling for the button used to add columns to the table*/
+.addColumnButton{
+    margin-bottom: 5% !important;
+}
+
+/*make the buttons smaller on smaller screens*/
+@media (max-width: 1000px) {
+    #createScheduleButton{
+        font-size: 0.8em;
+        margin-bottom: 10%;
+    }
+    
+    #addColumnButton{
+        font-size: 0.8em;
+    }
+    
+    #addRowButton{
+        font-size: 0.8em;
+    }
+    
+    #scheduleButton{
+        font-size: 0.8em;
+        margin-top: 5%;
+    }
+    
+}
+
+/*adjust the webpage so the screen gets larger*/
+@media (min-width: 1400px) {
+    #leftSide{
+        margin-left: -8%;
+    }
+
+    #rightSide{
+        margin-left: 8%;
+    }
+    
+}
